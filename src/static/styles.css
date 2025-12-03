@@ -91,15 +91,37 @@ section h3 {
   list-style-type: disc;
 }
 
+.participants-list {
+  margin-left: 0;
+  padding-left: 0;
+  list-style: none; /* hide bullet points */
+}
 .participants-list li {
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   color: #555;
   font-size: 14px;
 }
 
-.participants-list em {
-  color: #999;
-  font-style: italic;
+.participant-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.delete-participant {
+  background: transparent;
+  border: none;
+  color: #c62828;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.delete-participant:hover {
+  background-color: rgba(198, 40, 40, 0.08);
+}
 }
 
 .form-group {
