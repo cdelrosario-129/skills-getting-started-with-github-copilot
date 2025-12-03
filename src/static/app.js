@@ -3,6 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  // Modal elements
+  const confirmModal = document.getElementById('confirm-modal');
+  const confirmMessage = document.getElementById('confirm-message');
+  const confirmOk = document.getElementById('confirm-ok');
+  const confirmCancel = document.getElementById('confirm-cancel');
+
+  let pendingUnregister = null; // { activity, email }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,6 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      // Reset activity select (keep placeholder)
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -25,7 +34,46 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <h5>Current Participants (${details.participants.length}/${details.max_participants})</h5>
+            <ul class="participants-list"></ul>
+          </div>
         `;
+
+        // Populate participants as DOM elements so we can attach delete handlers
+        const ul = activityCard.querySelector('.participants-list');
+        if (details.participants.length === 0) {
+          const li = document.createElement('li');
+          li.innerHTML = '<em>No participants yet</em>';
+          ul.appendChild(li);
+        } else {
+          details.participants.forEach((p) => {
+            const li = document.createElement('li');
+            li.className = 'participant-item';
+
+            const span = document.createElement('span');
+            span.textContent = p;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'delete-participant';
+            btn.title = 'Unregister participant';
+            btn.dataset.activity = name;
+            btn.dataset.email = p;
+            btn.innerHTML = '🗑️';
+
+            btn.addEventListener('click', async () => {
+              // Show in-page modal instead of browser confirm
+              pendingUnregister = { activity: name, email: p };
+              confirmMessage.textContent = `Unregister ${p} from ${name}?`;
+              confirmModal.classList.remove('hidden');
+            });
+
+            li.appendChild(span);
+            li.appendChild(btn);
+            ul.appendChild(li);
+          });
+        }
 
         activitiesList.appendChild(activityCard);
 
@@ -60,11 +108,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (response.ok) {
         messageDiv.textContent = result.message;
-        messageDiv.className = "success";
+        messageDiv.className = "message success";
         signupForm.reset();
+        // Refresh activities to show new participant
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
-        messageDiv.className = "error";
+        messageDiv.className = "message error";
       }
 
       messageDiv.classList.remove("hidden");
@@ -75,10 +125,54 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 5000);
     } catch (error) {
       messageDiv.textContent = "Failed to sign up. Please try again.";
-      messageDiv.className = "error";
+        messageDiv.className = "message error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
     }
+  });
+
+  // Unregister a participant from an activity
+  async function unregisterParticipant(activity, email) {
+    try {
+      const resp = await fetch(
+        `/activities/${encodeURIComponent(activity)}/participants?email=${encodeURIComponent(email)}`,
+        { method: 'DELETE' }
+      );
+
+      const result = await resp.json();
+
+      if (resp.ok) {
+        messageDiv.textContent = result.message;
+        messageDiv.className = 'message success';
+        // Refresh activities list
+        fetchActivities();
+      } else {
+        messageDiv.textContent = result.detail || 'Failed to unregister';
+        messageDiv.className = 'message error';
+      }
+      messageDiv.classList.remove('hidden');
+      setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+    } catch (err) {
+      console.error('Error unregistering participant:', err);
+      messageDiv.textContent = 'Failed to unregister. Please try again.';
+      messageDiv.className = 'message error';
+      messageDiv.classList.remove('hidden');
+      setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+    }
+  }
+
+  // Modal confirm handlers
+  confirmCancel.addEventListener('click', () => {
+    pendingUnregister = null;
+    confirmModal.classList.add('hidden');
+  });
+
+  confirmOk.addEventListener('click', async () => {
+    if (!pendingUnregister) return;
+    const { activity, email } = pendingUnregister;
+    pendingUnregister = null;
+    confirmModal.classList.add('hidden');
+    await unregisterParticipant(activity, email);
   });
 
   // Initialize app
