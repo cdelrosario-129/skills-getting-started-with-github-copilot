@@ -122,6 +122,17 @@ section h3 {
 .delete-participant:hover {
   background-color: rgba(198, 40, 40, 0.08);
 }
+
+/* Modal styles for in-page confirm */
+.modal.hidden { display: none; }
+.modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+.modal-panel { position: relative; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); max-width: 420px; width: 90%; z-index: 1001; }
+.modal-panel h3 { margin-top: 0; color: #1a237e; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+.modal-actions button { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+.modal-actions #confirm-ok { background: #c62828; color: #fff; border-color: #c62828; }
+.modal-actions #confirm-cancel { background: #f5f5f5; }
 }
 
 .form-group {

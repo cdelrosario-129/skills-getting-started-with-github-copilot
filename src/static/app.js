@@ -3,6 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  // Modal elements
+  const confirmModal = document.getElementById('confirm-modal');
+  const confirmMessage = document.getElementById('confirm-message');
+  const confirmOk = document.getElementById('confirm-ok');
+  const confirmCancel = document.getElementById('confirm-cancel');
+
+  let pendingUnregister = null; // { activity, email }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -56,9 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.innerHTML = '🗑️';
 
             btn.addEventListener('click', async () => {
-              const confirmed = window.confirm(`Unregister ${p} from ${name}?`);
-              if (!confirmed) return;
-              await unregisterParticipant(name, p);
+              // Show in-page modal instead of browser confirm
+              pendingUnregister = { activity: name, email: p };
+              confirmMessage.textContent = `Unregister ${p} from ${name}?`;
+              confirmModal.classList.remove('hidden');
             });
 
             li.appendChild(span);
@@ -152,6 +160,20 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => messageDiv.classList.add('hidden'), 5000);
     }
   }
+
+  // Modal confirm handlers
+  confirmCancel.addEventListener('click', () => {
+    pendingUnregister = null;
+    confirmModal.classList.add('hidden');
+  });
+
+  confirmOk.addEventListener('click', async () => {
+    if (!pendingUnregister) return;
+    const { activity, email } = pendingUnregister;
+    pendingUnregister = null;
+    confirmModal.classList.add('hidden');
+    await unregisterParticipant(activity, email);
+  });
 
   // Initialize app
   fetchActivities();
